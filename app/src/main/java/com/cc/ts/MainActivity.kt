@@ -17,6 +17,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.lifecycle.lifecycleScope
 import com.cc.ts.database.*
 import kotlinx.coroutines.launch
@@ -41,7 +44,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.fillMaxSize(),
                         color = MaterialTheme.colorScheme.background
                     ) {
-                        MyApp(tasks, taskDao)  // Pass tasks and taskDao to MyApp composable
+                        MyApp(taskDao)  // Pass tasks and taskDao to MyApp composable
                     }
                 }
             }
@@ -52,18 +55,35 @@ class MainActivity : ComponentActivity() {
 // Moved the UI code into a separate composable function for clarity
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MyApp(tasks: List<Task>, taskDao: TaskDao) {
+fun MyApp(taskDao: TaskDao) {
+    // State for managing task list
+    val tasks = remember { mutableStateListOf<Task>() }
+
+    // Load tasks from the database when the app starts
+    LaunchedEffect(Unit) {
+        tasks.addAll(taskDao.getAllTasks())  // Replace with your actual DB query
+    }
+
     Column {
         Row {
             Greeting("Android")
         }
+
+        // LazyColumn to display tasks dynamically
         LazyColumn {
             items(tasks) { task ->
-                TaskRow(task = task, taskDao = taskDao)  // Pass taskDao and each task to the TaskRow composable
+                TaskRow(
+                    task = task,
+                    taskDao = taskDao,
+                    tasks = tasks,  // Pass tasks to TaskRow
+                )
             }
         }
+
+        // Input row for adding tasks
         Row {
-            InputRow(taskDao = taskDao)  // Pass taskDao to InputRow
+            InputRow(taskDao = taskDao, tasks = tasks)
         }
     }
 }
+
